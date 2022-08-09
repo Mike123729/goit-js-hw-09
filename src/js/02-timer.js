@@ -51,9 +51,12 @@ refs.btnStartTimer.addEventListener('click', () => {
 
     if (dateInterval > 0) {
       updateTimer({ days, hours, minutes, seconds });
+
     } else {
       clearInterval(timerId);
       Notify.success('Time is over');
+            refs.btnStartTimer.disabled = false;
+            refs.dataTimePicker.disabled = false;
     }
   }, 1000);
 });
