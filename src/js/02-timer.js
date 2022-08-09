@@ -4,6 +4,7 @@ import { Notify } from 'notiflix/build/notiflix-notify-aio';
 // Дополнительный импорт стилей
 import 'flatpickr/dist/flatpickr.min.css';
 
+//  слушателя событий
 const refs = {
   btnStartTimer: document.querySelector('button[data-start]'),
   timerDays: document.querySelector('[data-days]'),
