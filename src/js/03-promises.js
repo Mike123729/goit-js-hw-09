@@ -44,4 +44,3 @@ function onFormSubmit(event) {
     expectPromice(i, delay, step);
   }
 }
-// new changes
