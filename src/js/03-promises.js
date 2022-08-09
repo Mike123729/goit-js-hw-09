@@ -1,44 +1,19 @@
-import { Notify } from 'notiflix/build/notiflix-notify-aio';
+import Notiflix from 'notiflix';
+Notiflix.Notify.init({
+  timeout: 5000,
+});
 
-const refs = {
-  form: document.querySelector(`.form`),
-  delayField: document.querySelector(`input[name="delay"]`),
-  stepField: document.querySelector(`input[name="step"]`),
-  amountField: document.querySelector(`input[name="amount"]`),
+const formElements = {
+  form: document.querySelector('.form'),
+  delay: document.querySelector('[name="delay"]'),
+  step: document.querySelector('[name="step"]'),
+  amount: document.querySelector('[name="amount"]'),
 };
 
-refs.form.addEventListener(`submit`, onFormSubmit);
-
-function onFormSubmit(e) {
-  e.preventDefault();
-
-  let counter = 0;
-  let delay = 0;
-
-  const timerId = setInterval(() => {
-    delay =
-      Number(refs.delayField.value) + counter * Number(refs.stepField.value);
-
-    counter += 1;
-
-    if (counter === Number(refs.amountField.value)) {
-      clearInterval(timerId);
-    }
-
-    createPromise(counter, delay)
-      .then(({ position, delay }) => {
-        Notify.success(`✅ Fulfilled promise ${position} in ${delay}ms`);
-      })
-      .catch(({ position, delay }) => {
-        Notify.failure(`❌ Rejected promise ${position} in ${delay}ms`);
-      })
-      .finally(() => e.target.reset());
-  }, delay);
-}
+formElements.form.addEventListener('submit', onFormSubmit);
 
 function createPromise(position, delay) {
   const shouldResolve = Math.random() > 0.3;
-
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       if (shouldResolve) {
@@ -48,4 +23,24 @@ function createPromise(position, delay) {
       }
     }, delay);
   });
+}
+
+function expectPromice(pos, delay, step) {
+  createPromise(pos + 1, delay + step * pos)
+    .then(({ position, delay }) => {
+      Notiflix.Notify.success(`✅ Fulfilled promise ${position} in ${delay}ms`);
+    })
+    .catch(({ position, delay }) => {
+      Notiflix.Notify.failure(`❌ Rejected promise ${position} in ${delay}ms`);
+    });
+}
+
+function onFormSubmit(event) {
+  event.preventDefault();
+  const delay = Number.parseInt(formElements.delay.value);
+  const step = Number.parseInt(formElements.step.value);
+  const amount = Number.parseInt(formElements.amount.value);
+  for (let i = 0; i < amount; i++) {
+    expectPromice(i, delay, step);
+  }
 }
