@@ -1,79 +1,76 @@
 // Описан в документации
 import flatpickr from 'flatpickr';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 // Дополнительный импорт стилей
 import 'flatpickr/dist/flatpickr.min.css';
 
-// import Notiflix from 'notiflix';
-import { Report } from 'notiflix/build/notiflix-report-aio';
-
 const refs = {
-  input: document.querySelector(`#datetime-picker`),
-  btnStart: document.querySelector(`button[type="button"]`),
-
-  daysOutput: document.querySelector(`span[data-days]`),
-  hoursOutput: document.querySelector(`span[data-hours]`),
-  minutesOutput: document.querySelector(`span[data-minutes]`),
-  secondsOutput: document.querySelector(`span[data-seconds]`),
+  btnStartTimer: document.querySelector('button[data-start]'),
+  timerDays: document.querySelector('[data-days]'),
+  timerMinutes: document.querySelector('[data-minutes]'),
+  timerHours: document.querySelector('[data-hours]'),
+  timerSeconds: document.querySelector('[data-seconds]'),
+  dataTimePicker: document.querySelector('#datetime-picker'),
 };
 
+refs.btnStartTimer.disabled = true;
+
+let timerId = null;
+let chooseDate = null;
+
+// Вывод календаря в инпуте
 const options = {
   enableTime: true,
   time_24hr: true,
   defaultDate: new Date(),
   minuteIncrement: 1,
-  onClose(selectedDates) {
-    chooseDate = selectedDates[0];
-
-    checkValidDate();
-  },
+  onClose,
 };
 
-flatpickr('#datetime-picker', options);
+flatpickr(refs.dataTimePicker, options);
 
-let chooseDate = null;
-
-refs.btnStart.setAttribute('disabled', '');
-
-refs.btnStart.addEventListener(`click`, onBtnStartClick);
-
-function checkValidDate() {
-  const currentDate = new Date();
-
-  if (chooseDate.getTime() < currentDate.getTime()) {
-    Report.warning(
-      'Atention',
-      'Please choose a date in the future',
-      'Understand'
-    );
-    return;
+// Проверка выбранной даты
+function onClose(selectedDates) {
+  if (selectedDates[0] < options.defaultDate) {
+    return Notify.failure('Please choose a date in the future');
   }
-  refs.btnStart.removeAttribute('disabled', '');
+  chooseDate = selectedDates[0];
+  refs.btnStartTimer.disabled = false;
 }
 
-function onBtnStartClick(e) {
-  const timerId = setInterval(() => {
-    const currentDate = new Date();
+// Запуск таймера по клику
+refs.btnStartTimer.addEventListener('click', () => {
+  timerId = setInterval(() => {
+    const currentTime = Date.now();
+    const dateInterval = chooseDate - currentTime;
+    const { days, hours, minutes, seconds } = convertMs(dateInterval);
 
-    const deltaTime = chooseDate.getTime() - currentDate.getTime();
+    refs.btnStartTimer.disabled = true;
+    refs.dataTimePicker.disabled = true;
 
-    const { days, hours, minutes, seconds } = convertMs(deltaTime);
-
-    refs.daysOutput.textContent = days;
-    refs.hoursOutput.textContent = hours;
-    refs.minutesOutput.textContent = minutes;
-    refs.secondsOutput.textContent = seconds;
-
-    if (
-      refs.daysOutput.textContent === '00' &&
-      refs.hoursOutput.textContent === '00' &&
-      refs.minutesOutput.textContent === '00' &&
-      refs.secondsOutput.textContent === '00'
-    ) {
+    if (dateInterval > 0) {
+      updateTimer({ days, hours, minutes, seconds });
+    } else {
       clearInterval(timerId);
+      Notify.success('Time is over');
     }
   }, 1000);
+});
+
+// Обновляет интерфейс таймера
+function updateTimer({ days, hours, minutes, seconds }) {
+  refs.timerDays.textContent = addLeadingZero(days);
+  refs.timerHours.textContent = addLeadingZero(hours);
+  refs.timerMinutes.textContent = addLeadingZero(minutes);
+  refs.timerSeconds.textContent = addLeadingZero(seconds);
 }
 
+// Добавляет "0", если меньше десяти
+function addLeadingZero(value) {
+  return String(value).padStart(2, '0');
+}
+
+// Конвертация в дату
 function convertMs(ms) {
   // Number of milliseconds per unit of time
   const second = 1000;
@@ -82,19 +79,13 @@ function convertMs(ms) {
   const day = hour * 24;
 
   // Remaining days
-  const days = addLeadingZero(Math.floor(ms / day));
+  const days = Math.floor(ms / day);
   // Remaining hours
-  const hours = addLeadingZero(Math.floor((ms % day) / hour));
+  const hours = Math.floor((ms % day) / hour);
   // Remaining minutes
-  const minutes = addLeadingZero(Math.floor(((ms % day) % hour) / minute));
+  const minutes = Math.floor(((ms % day) % hour) / minute);
   // Remaining seconds
-  const seconds = addLeadingZero(
-    Math.floor((((ms % day) % hour) % minute) / second)
-  );
+  const seconds = Math.floor((((ms % day) % hour) % minute) / second);
 
   return { days, hours, minutes, seconds };
-}
-
-function addLeadingZero(value) {
-  return String(value).padStart(2, '0');
 }
